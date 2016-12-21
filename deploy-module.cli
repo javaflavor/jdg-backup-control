@@ -1,0 +1,10 @@
+#
+# deploy-module.cli
+#
+cd /
+
+batch
+
+deploy target/jdg-backup-control.jar --force
+
+run-batch
