@@ -9,24 +9,34 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
 import org.infinispan.Cache;
+import org.infinispan.commons.io.ByteBufferFactory;
 import org.infinispan.distexec.DistributedCallable;
+import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.marshall.core.MarshalledEntry;
+import org.infinispan.marshall.core.MarshalledEntryFactory;
+import org.infinispan.persistence.manager.PersistenceManager;
 
+import com.redhat.example.jdg.store.CacheControlStore;
 import com.redhat.example.jdg.util.Trace;
 
 public class RestoreCommand implements DistributedCallable<Object, Object, String>, Serializable {
 	private static final long serialVersionUID = -8307084250504172126L;
 	
-	static Logger log = Logger.getLogger(RestoreCommand.class);
+	static Logger log = Logger.getLogger(RestoreCommand.class.getName());
 	static String nodeName = System.getProperty("jboss.node.name");
 	static BackupConfiguration config = BackupConfiguration.getInstance();
 	static Object lock = new Object();
 	
 	EmbeddedCacheManager manager;
+	MarshalledEntryFactory<?,?> marshalledEntryFactory;
+	ByteBufferFactory byteBufferFactory;
 
 	@Override
 	public void setEnvironment(Cache<Object, Object> cache, Set<Object> inputKeys) {
@@ -38,6 +48,8 @@ public class RestoreCommand implements DistributedCallable<Object, Object, Strin
 		log.info("### Restore start!");
 		try {
 			long t1 = System.currentTimeMillis();
+
+			preparaFactories();
 
 			Path dir = Paths.get(config.baseDir);
 			List<Path> files = Files.list(dir)
@@ -54,10 +66,20 @@ public class RestoreCommand implements DistributedCallable<Object, Object, Strin
 
 			return nodeName;
 		} catch (Exception e) {
-			RuntimeException ex = new RuntimeException("Backup failed: "+nodeName, e);
-			log.error(ex.getMessage(), e);
+			RuntimeException ex = new RuntimeException("Restore failed: "+nodeName, e);
+			log.log(Level.SEVERE, ex.getMessage(), e);
 			throw ex;
 		}
+	}
+
+	void preparaFactories() {
+        ComponentRegistry cr = manager.getCache("cacheController")
+        		.getAdvancedCache().getComponentRegistry();
+        PersistenceManager persistenceManager = cr.getComponent(PersistenceManager.class);
+        Set<CacheControlStore> stores = persistenceManager.getStores(CacheControlStore.class);
+        CacheControlStore store = stores.iterator().next();
+        marshalledEntryFactory = store.getMarshalledEntryFactory();
+        byteBufferFactory = store.getByteBufferFactory();
 	}
 
 	void readFileAndRestore(Path file, EmbeddedCacheManager manager) {
@@ -69,10 +91,17 @@ public class RestoreCommand implements DistributedCallable<Object, Object, Strin
 			Cache<Object,Object> cache = manager.getCache(cacheName);
 			int size = in.readInt();			// read size.
 			for (int i = 0; i < size; i++) {
-				Object key = in.readObject();	// read key.
-				Object val = in.readObject();	// read value.
+				byte key[] = (byte[])in.readObject();	// read key.
+				byte val[] = (byte[])in.readObject();	// read value.
+				byte meta[] = (byte[])in.readObject();	// read metadata.
+				MarshalledEntry<?,?> marshalledEntry = marshalledEntryFactory.newMarshalledEntry(
+						byteBufferFactory.newByteBuffer(key, 0, key.length),
+						byteBufferFactory.newByteBuffer(val, 0, val.length),
+						byteBufferFactory.newByteBuffer(meta, 0, meta.length));
 				// Restore entry, if not exists.
-				cache.putIfAbsent(key, val);
+				cache.putIfAbsent(marshalledEntry.getKey(), marshalledEntry.getValue(),
+						marshalledEntry.getMetadata().lifespan(), TimeUnit.MILLISECONDS,
+						marshalledEntry.getMetadata().maxIdle(), TimeUnit.MILLISECONDS);
 			}
 			assert(in.available() == 0);
 			log.info(String.format("End restore file: %s, %d entries.", file, size));

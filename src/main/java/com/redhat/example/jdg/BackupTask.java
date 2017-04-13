@@ -6,8 +6,9 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.apache.log4j.Logger;
 import org.infinispan.Cache;
 import org.infinispan.distexec.DefaultExecutorService;
 import org.infinispan.distexec.DistributedExecutorService;
@@ -17,7 +18,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import com.redhat.example.jdg.util.Trace;
 
 public class BackupTask {
-	static Logger log = Logger.getLogger(BackupTask.class);
+	static Logger log = Logger.getLogger(BackupTask.class.getName());
 
 	static String nodeName = System.getProperty("jboss.node.name");
 	static BackupConfiguration config = BackupConfiguration.getInstance();
@@ -33,6 +34,8 @@ public class BackupTask {
 	public void backup(EmbeddedCacheManager manager) {
 		log.info("### Backup start!");
 		log.info("backup(): cacheNames="+manager.getCacheNames());
+		// Empty futures.
+		futures.clear();
 		try {
 			manager.getCacheNames()
 			.stream()
@@ -49,7 +52,7 @@ public class BackupTask {
 			})
 			.forEach(future -> futures.addAll(future));
 		} catch (Exception e) {
-			log.error("Failed backup task.", e);
+			log.log(Level.SEVERE, "Failed backup task.", e);
 			throw e;
 		}
 	}

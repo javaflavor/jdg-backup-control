@@ -3,8 +3,10 @@ package com.redhat.example.jdg.store;
 import java.util.concurrent.Executor;
 
 import org.infinispan.Cache;
+import org.infinispan.commons.io.ByteBufferFactory;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.marshall.core.MarshalledEntry;
+import org.infinispan.marshall.core.MarshalledEntryFactory;
 import org.infinispan.persistence.spi.AdvancedLoadWriteStore;
 import org.infinispan.persistence.spi.InitializationContext;
 import org.infinispan.util.logging.Log;
@@ -12,19 +14,31 @@ import org.infinispan.util.logging.LogFactory;
 
 import com.redhat.example.jmx.MXBeanFactory;
 
-public class CacheControlStore  implements AdvancedLoadWriteStore {
+public class CacheControlStore implements AdvancedLoadWriteStore {
 	static Log log = LogFactory.getLog(CacheControlStore.class);
 	
 	InitializationContext context;
 	MXBeanFactory factory = new MXBeanFactory();
 	EmbeddedCacheManager manager;
+	MarshalledEntryFactory<?,?> marshalledEntryFactory;
+	ByteBufferFactory byteBufferFactory;
+
+	public MarshalledEntryFactory<?,?> getMarshalledEntryFactory() {
+		return marshalledEntryFactory;
+	}
+
+	public ByteBufferFactory getByteBufferFactory() {
+		return byteBufferFactory;
+	}
 
 	@Override
 	public void init(InitializationContext context) {
 		log.infof("### init(): context=%s", context);
 		this.context = context;
-		Cache cache = context.getCache();
+		Cache<?,?> cache = context.getCache();
 		manager = cache.getCacheManager();
+		marshalledEntryFactory = context.getMarshalledEntryFactory();
+		byteBufferFactory = context.getByteBufferFactory();
 		log.infof("### init(): manager=%s, cache=%s", manager, cache.getClass());
 	}
 
@@ -34,7 +48,7 @@ public class CacheControlStore  implements AdvancedLoadWriteStore {
 	}
 
 	@Override
-	public MarshalledEntry load(Object key) {
+	public MarshalledEntry<?,?> load(Object key) {
 		return null;
 	}
 

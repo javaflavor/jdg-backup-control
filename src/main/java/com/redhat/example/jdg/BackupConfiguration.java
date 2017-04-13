@@ -8,9 +8,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import org.apache.log4j.Logger;
 
 public class BackupConfiguration {
 
@@ -21,7 +20,7 @@ public class BackupConfiguration {
 	static final String BACKUP_TIMEOUT_MIN = "backup.backup_timeout_min";
 	static final String RESTORE_TIMEOUT_MIN = "backup.restore_timeout_min";
 
-	static Logger log = Logger.getLogger(BackupTask.class);
+	static Logger log = Logger.getLogger(BackupTask.class.getName());
 	static BackupConfiguration config = new BackupConfiguration();
 
 	List<String> cacheNames;
