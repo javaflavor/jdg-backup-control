@@ -10,7 +10,9 @@
 	<name>${project.artifactId}</name>
 
 	<properties>
-		<infinispan.version>6.2.1.Final-redhat-2</infinispan.version>
+		<infinispan.version>6.4.0.Final-redhat-4</infinispan.version>
+<!-- 		<infinispan.version>8.3.0.Final-redhat-1</infinispan.version> -->
+		<jboss.spec.version>1.0.3.Final-redhat-2</jboss.spec.version>
         <jboss.ee.version>3.0.2.Final-redhat-7</jboss.ee.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -26,8 +28,8 @@
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.spec</groupId>
-				<artifactId>jboss-javaee-6.0</artifactId>
-				<version>${jboss.ee.version}</version>
+				<artifactId>jboss-javaee-7.0</artifactId>
+				<version>${jboss.spec.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -42,14 +44,8 @@
 		</dependency>
 		<dependency>
 			<groupId>org.infinispan</groupId>
-			<artifactId>infinispan-cdi</artifactId>
-			<scope>compile</scope>
+			<artifactId>infinispan-remote-query-server</artifactId>
 		</dependency>
-<!-- 		<dependency> -->
-<!-- 			<groupId>javax.inject</groupId> -->
-<!-- 			<artifactId>javax.inject</artifactId> -->
-<!-- 			<scope>provided</scope> -->
-<!-- 		</dependency> -->
 		<dependency>
 			<groupId>javax.enterprise</groupId>
 			<artifactId>cdi-api</artifactId>
@@ -72,9 +68,9 @@
 
 	<repositories>
 		<repository>
-			<id>redhat-techpreview-repository</id>
-			<name>Red Hat Tech Preview Repository</name>
-			<url>http://maven.repository.redhat.com/techpreview/all</url>
+			<id>redhat-ga-repository</id>
+			<name>Red Hat GA Repository</name>
+			<url>https://maven.repository.redhat.com/ga/</url>
 			<layout>default</layout>
 			<releases>
 				<enabled>true</enabled>
@@ -89,9 +85,9 @@
 
 	<pluginRepositories>
 		<pluginRepository>
-			<id>redhat-techpreview-repository</id>
-			<name>Red Hat Tech Preview Repository</name>
-			<url>http://maven.repository.redhat.com/techpreview/all/</url>
+			<id>redhat-ga-repository</id>
+			<name>Red Hat GA Repository</name>
+			<url>https://maven.repository.redhat.com/ga/</url>
 			<layout>default</layout>
 			<releases>
 				<enabled>true</enabled>
