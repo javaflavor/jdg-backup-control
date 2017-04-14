@@ -9,6 +9,7 @@ The tool is implementated as follows:
 1. In the client server mode, developers can customize the server-side behavior by deploying custom listeners, filters, converters, stores etc. The custom module can access the library mode API of CacheManager and Cache, read the Cache entries iteratively and backup these data.
 2. Unlike RemoteCache, Cache.keySet() and entrySet() in library mode handle the local entries in the target instance. Therefore, distributed executor is useful to backup all instances simultaneously.
 3. The above-mentioned custom processing (backup) module deployed in the JDG server can not be called via Hot Rod. Instead, the module is exporsed the custom MBean interface for triggering the backup process from the outside via JMX API.
+4. Work fine for JDG 6.6 and 7.0.
 
 ## How to use
 
@@ -77,6 +78,10 @@ The tool can be built by the following command, in case that target JDG version 
 ~~~
 $ cd jdg-backup-control
 $ mvn clean package
+
+or,
+
+$ mvn clean package -Pjdg7
 ~~~
 
 For JDG 6.6.x, you must specify the profile name **jdg6** in the mvn command line.
@@ -113,31 +118,28 @@ classes/                maven-archiver/
 In order to deploy the module in JDG server, copy it to the deployments directory of the target JDG server.
 
 ~~~
-$ scp target/jdg-backup-control.jar \
-    jboss@server1:/opt/jboss/jboss-datagrid-6.5.1-server/node1/deployments/
-$ scp target/jdg-backup-control.jar \
-    jboss@server2:/opt/jboss/jboss-datagrid-6.5.1-server/node2/deployments/
+$ /opt/jboss/jboss-datagrid-7.0.0-server/bin/cli.sh --controller=server1:9990 'deploy target/jdg-backup-control.jar --force'
+$ /opt/jboss/jboss-datagrid-7.0.0-server/bin/cli.sh --controller=server2:9990 'deploy target/jdg-backup-control.jar --force'
     :
 ~~~
 
 Create a dummy cache, called cacheController using the deployed module and restart the server.
 
 ~~~
-$ /opt/jboss/jboss-datagrid-6.5.1-server/bin/jboss-cli.sh \
-	--connect='remoting://<user>:<passwd>@server1:9999' \
-	--file=add-controller-cache.cli
-$ /opt/jboss/jboss-datagrid-6.5.1-server/bin/jboss-cli.sh \
-	--connect='remoting://<user>:<passwd>@server2:9999' \
-	--file=add-controller-cache.cli
+$ /opt/jboss/jboss-datagrid-7.0.0-server/bin/cli.sh --controller=server1:9990 --file=cli/add-controller-cache-jdg7.cli
+$ /opt/jboss/jboss-datagrid-7.0.0-server/bin/cli.sh --controller=server2:9990 --file=cli/add-controller-cache-jdg7.cli
 	:
 ~~~
+
+If your target JDG is 6.6, use cli script `cli/add-controller-cache-jdg6.cli`
 
 Please check the configuration file clustered.xml is modified as follows:
 
 ~~~
-            <distributed-cache name="cacheController" mode="SYNC" start="EAGER">
-                <store class="com.redhat.example.jdg.store.CacheControlStore"/>
-            </distributed-cache>
+                <distributed-cache-configuration name="cacheControl" mode="SYNC" start="EAGER">
+                    <store class="com.redhat.example.jdg.store.CacheControlStore"/>
+                </distributed-cache-configuration>
+                <distributed-cache name="cacheController" configuration="cacheControl"/>
 ~~~
 
 ### Test Fright
@@ -184,19 +186,19 @@ var username = "admin"
 var password = "welcome1!"
 ~~~
 
-In order to backup, execute the script jdg-backup.sh.
+In order to backup, execute the script `jdg-backup.sh`.
 
 ~~~
 $ bin/jdg-backup.sh
 ~~~
 
-And for restore, use the script jdg-restore.sh.
+And for restore, use the script `jdg-restore.sh`.
 
 ~~~
 $ bin/jdg-restore.sh
 ~~~
 
-You can check the current backup/restore status using jdg-status.sh
+You can check the current backup/restore status using `jdg-status.sh`
 
 ~~~
 $ bin/jdg-status.sh
