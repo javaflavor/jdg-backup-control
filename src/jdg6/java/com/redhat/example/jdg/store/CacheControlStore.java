@@ -76,7 +76,7 @@ public class CacheControlStore implements AdvancedLoadWriteStore {
 	public void process(KeyFilter filter, CacheLoaderTask task, Executor executor,
 			boolean fetchValue, boolean fetchMetaData) {
 	}
-
+	
 	@Override
 	public int size() {
 		return 0;

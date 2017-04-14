@@ -15,7 +15,7 @@ importPackage(javax.management.remote)
 
 // Check arguments.
 if (arguments.length != 2) {
-    println("Usage: jrunscript cachecontrol.js cachecontrol.config [backup|restore]")
+    println("Usage: jrunscript cachecontrol.js cachecontrol.config [backup|restore|status]")
     exit(1)
 }
 var config = arguments[0]
@@ -26,19 +26,39 @@ load(config)
 var connector = getJMXConnector(server, username, password)
 var con = connector.getMBeanServerConnection()
 
-System.out.printf("Sending '%s' command to server '%s'.%n", command, server)
-
 var objname = new ObjectName("com.redhat.example:name=CacheController")
-con.invoke(objname, command, null, null)
+
+if (command == "status") {
+    var attrs = getStatus(con, objname)
+    System.out.printf("Backup:  %s, finished nodes: %s%n", attrs.get(0).getValue() ? "Running" : "Stopped", asList(attrs.get(1).getValue()))
+    System.out.printf("Restore: %s, finished nodes: %s%n", attrs.get(2).getValue() ? "Running" : "Stopped", asList(attrs.get(3).getValue()))
+} else {
+    System.out.printf("Sending '%s' command to server '%s'.%n", command, server)
+    con.invoke(objname, command, null, null)
+}
 
 function getJMXConnector(server, username, password) {
-    var url = new JMXServiceURL("service:jmx:remoting-jmx://" + server)
+    var url = new JMXServiceURL("service:jmx:" + server)
     var cls = new java.lang.String().getClass()
     var cred = java.lang.reflect.Array.newInstance(cls, 2)
     cred[0] = username
     cred[1] = password
     var env = {"jmx.remote.credentials" : cred}
     return JMXConnectorFactory.connect(url, env)
+}
+
+function getStatus(con, objname) {
+    var cls = new java.lang.String().getClass()
+    var names = java.lang.reflect.Array.newInstance(cls, 4)
+    names[0] = "BackupRunning"
+    names[1] = "BackupList"
+    names[2] = "RestoreRuning"
+    names[3] = "RestoreList"
+    return con.getAttributes(objname, names)
+}
+
+function asList(arr) {
+    return java.util.Arrays.asList(arr)
 }
 
 function sleep(sec) {

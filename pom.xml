@@ -10,8 +10,8 @@
 	<name>${project.artifactId}</name>
 
 	<properties>
-		<infinispan.version>6.4.0.Final-redhat-4</infinispan.version>
-<!-- 		<infinispan.version>8.3.0.Final-redhat-1</infinispan.version> -->
+		<!-- infinispan version specified in profile 'jdg6' or 'jdg7' -->
+		<!--infinispan.version>8.3.0.Final-redhat-1</infinispan.version-->
 		<jboss.spec.version>1.0.3.Final-redhat-2</jboss.spec.version>
         <jboss.ee.version>3.0.2.Final-redhat-7</jboss.ee.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -63,6 +63,25 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>src/${build.profile.id}/java</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			
 		</plugins>
 	</build>
 
@@ -100,4 +119,23 @@
 		</pluginRepository>
 	</pluginRepositories>
 
+	<profiles>
+		<profile>
+			<id>jdg7</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<infinispan.version>8.3.0.Final-redhat-1</infinispan.version>
+				<build.profile.id>jdg7</build.profile.id>
+			</properties>
+		</profile>
+		<profile>
+			<id>jdg6</id>
+			<properties>
+				<infinispan.version>6.4.0.Final-redhat-4</infinispan.version>
+				<build.profile.id>jdg6</build.profile.id>
+			</properties>
+		</profile>
+	</profiles>
 </project>

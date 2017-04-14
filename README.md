@@ -37,7 +37,11 @@ src/main/resources/backup.properties:
 ~~~
 # Cache name list to backup.
 backup.cache_names = namedCache, \
-    default
+	default, \
+	LuceneIndexesMetadata, \
+	LuceneIndexesData, \
+	LuceneIndexesLocking, \
+	___protobuf_metadata
 
 # Base directory to store back files.
 backup.base_dir = /tmp/backup
@@ -51,6 +55,8 @@ backup.backup_timeout_min = 60
 # Timeout(min) for restore process.
 backup.restore_timeout_min = 60
 ~~~
+
+Please note that if you are using Remote Query and infinispan directory provider, you should also backup the hidden cache called **"___protobuf_metadata"**.
 
 The backup data is chunked for each backup.partition\_size entries and stored in the directory specified by backup.base_dir as follows.
 
@@ -66,11 +72,18 @@ The backup data is chunked for each backup.partition\_size entries and stored in
 
 ### Build the deployment module
 
-The tool can be built by the following command.
+The tool can be built by the following command, in case that target JDG version is 7.0 or later.
 
 ~~~
 $ cd jdg-backup-control
 $ mvn clean package
+~~~
+
+For JDG 6.6.x, you must specify the profile name **jdg6** in the mvn command line.
+
+~~~
+$ cd jdg-backup-control
+$ mvn clean package -Pjdg6
 ~~~
 
 Check "BUILD SUCCESS" message.
@@ -152,13 +165,18 @@ In addition, sh script for calling back up and restore JMX API is also included,
 
 * bin/jdg-backup.sh
 * bin/jdg-restore.sh
+* bin/jdg-status.sh
 
 The connection information of the sh script above is defined in bin/cachecontrol.config. Please correct the settings according to your environment.
 
 ~~~
 // Any server to connect using JMX protocol.
+// 
+// JDG6: "remoting-jmx://<host>:<port>"
+// JDG7: "remote+http://<host>:<port>" (or "http-remoting-jmx://<host>:<port>")
 
-var server = "localhost:9999"
+//var server = "remoting-jmx://localhost:9999"
+var server = "remote+http://localhost:9990"
 
 // Authentication info: username and password.
 
@@ -176,4 +194,13 @@ And for restore, use the script jdg-restore.sh.
 
 ~~~
 $ bin/jdg-restore.sh
+~~~
+
+You can check the current backup/restore status using jdg-status.sh
+
+~~~
+$ bin/jdg-status.sh
+
+Backup:  Stopped, finished nodes: []
+Restore: Stopped, finished nodes: [node2, node1, node3, node4]
 ~~~

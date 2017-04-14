@@ -87,7 +87,7 @@ public class BackupCommand implements DistributedCallable<Object, Object, String
         marshalledEntryFactory = store.getMarshalledEntryFactory();
 	}
 
-	void saveToFile(String server, String cacheName, long partition, List<InternalCacheEntry> iceList) {
+	void saveToFile(String server, String cacheName, Object partition, List<?> iceList) {
 		Trace.begin();
 		Path file = Paths.get(config.baseDir, "backup-"+cacheName+"-"+server+"-"+partition+".bin");
 		
@@ -95,8 +95,11 @@ public class BackupCommand implements DistributedCallable<Object, Object, String
 			log.info("Begin backup file: "+file);
 			out.writeUTF(cacheName);					// write cache name.
 			out.writeInt(iceList.size());				// write partition size.
-			iceList.forEach(ice -> {
+			iceList.forEach(entry -> {
 				try {
+					// In order to avoid compile error, we do not use generics type.
+					// JDG7: InternalCacheEntry<K,V>, JDG6: InternalCacheEntry
+					InternalCacheEntry ice = (InternalCacheEntry)entry; 
 					MarshalledEntry<?,?> marshalledEntry = marshalledEntryFactory.newMarshalledEntry(ice.getKey(), ice.getValue(), PersistenceUtil.internalMetadata(ice));
 					out.writeObject(marshalledEntry.getKeyBytes().getBuf());	// write key.
 					out.writeObject(marshalledEntry.getValueBytes().getBuf());	// write value.
